@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apartman Yönetim Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans pb-12">
+
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- Başlık -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Apartman Yönetim Paneli</h1>
+                <p class="text-sm text-slate-500">Daire, aidat ve gider takip sistemi</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="verileriDisariAktar()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                    📊 Excel'e Aktar (CSV)
+                </button>
+                <button onclick="sistemiSifirla()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium px-4 py-2.5 rounded-xl transition">
+                    Sıfırla
+                </button>
+            </div>
+        </header>
+
+        <!-- Özet Kartları -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500">Toplam Daire</p>
+                <h3 id="toplamDaire" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500">Toplanan Aidat (Gelir)</p>
+                <h3 id="toplamGelir" class="text-3xl font-bold text-emerald-600 mt-1">0 ₺</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500">Toplam Gider</p>
+                <h3 id="toplamGiderTutar" class="text-3xl font-bold text-amber-600 mt-1">0 ₺</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500">Ödenmemiş Borçlar</p>
+                <h3 id="toplamBorc" class="text-3xl font-bold text-rose-600 mt-1">0 ₺</h3>
+            </div>
+        </div>
+
+        <!-- Veri Giriş Formları Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Yeni Daire Ekleme -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-semibold text-slate-700 mb-4">➕ Yeni Daire / Sakin Ekle</h3>
+                <form id="daireForm" onsubmit="daireEkle(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Daire No</label>
+                        <input type="text" id="daireNo" required placeholder="Örn: Kat 2 / No: 5" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Malik / Kiracı Adı</label>
+                        <input type="text" id="daireKisi" required placeholder="Ad Soyad" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Aidat Tutarı (₺)</label>
+                        <input type="number" id="daireTutar" required value="750" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-xl text-sm transition">Daireyi Kaydet</button>
+                </form>
+            </div>
+
+            <!-- Yeni Gider Ekleme -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-semibold text-slate-700 mb-4">💸 Apartman Gideri Ekle</h3>
+                <form id="giderForm" onsubmit="giderEkle(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Gider Açıklaması</label>
+                        <input type="text" id="giderAciklama" required placeholder="Örn: Kapıcı Ücreti / Elektrik Faturası" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Tutar (₺)</label>
+                        <input type="number" id="giderTutar" required placeholder="Tutar giriniz" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Kategori</label>
+                        <select id="giderKategori" class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 bg-white">
+                            <option value="Temizlik / Bakım">Temizlik / Bakım</option>
+                            <option value="Elektrik / Su">Elektrik / Su</option>
+                            <option value="Personel">Personel</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 rounded-xl text-sm transition">Gideri Kaydet</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Daireler Tablosu -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-slate-100 font-semibold text-slate-700">Daire Listesi ve Aidat Durumları</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-xs uppercase text-slate-400 tracking-wider">
+                            <th class="px-6 py-3">Daire No</th>
+                            <th class="px-6 py-3">Malik / Kiracı</th>
+                            <th class="px-6 py-3">Aidat Durumu</th>
+                            <th class="px-6 py-3">Tutar</th>
+                            <th class="px-6 py-3 text-right">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="daireTablosu" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dinamik dolacak -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Giderler Tablosu -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 font-semibold text-slate-700">Apartman Giderleri Listesi</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-xs uppercase text-slate-400 tracking-wider">
+                            <th class="px-6 py-3">Açıklama</th>
+                            <th class="px-6 py-3">Kategori</th>
+                            <th class="px-6 py-3">Tutar</th>
+                            <th class="px-6 py-3 text-right">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="giderTablosu" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dinamik dolacak -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Verileri localStorage'dan çek veya boş dizi başlat
+        let daireler = JSON.parse(localStorage.getItem('ap_daireler')) || [];
+        let giderler = JSON.parse(localStorage.getItem('ap_giderler')) || [];
+
+        function verileriKaydet() {
+            localStorage.setItem('ap_daireler', JSON.stringify(daireler));
+            localStorage.setItem('ap_giderler', JSON.stringify(giderler));
+            ekraniGuncelle();
+        }
+
+        function daireEkle(e) {
+            e.preventDefault();
+            const no = document.getElementById('daireNo').value;
+            const kisi = document.getElementById('daireKisi').value;
+            const tutar = Number(document.getElementById('daireTutar').value);
+
+            daireler.push({
+                id: Date.now(),
+                no,
+                kisi,
+                durum: 'Ödenmedi',
+                tutar
+            });
+
+            document.getElementById('daireForm').reset();
+            document.getElementById('daireTutar').value = 750;
+            verileriKaydet();
+        }
+
+        function giderEkle(e) {
+            e.preventDefault();
+            const aciklama = document.getElementById('giderAciklama').value;
+            const tutar = Number(document.getElementById('giderTutar').value);
+            const kategori = document.getElementById('giderKategori').value;
+
+            giderler.push({
+                id: Date.now(),
+                aciklama,
+                tutar,
+                kategori
+            });
+
+            document.getElementById('giderForm').reset();
+            verileriKaydet();
+        }
+
+        function durumDegistir(id) {
+            const daire = daireler.find(d => d.id === id);
+            if (daire) {
+                daire.durum = daire.durum === 'Ödendi' ? 'Ödenmedi' : 'Ödendi';
+                verileriKaydet();
+            }
+        }
+
+        function daireSil(id) {
+            daireler = daireler.filter(d => d.id !== id);
+            verileriKaydet();
+        }
+
+        function giderSil(id) {
+            giderler = giderler.filter(g => g.id !== id);
+            verileriKaydet();
+        }
+
+        function sistemiSifirla() {
+            if(confirm('Tüm veriler silinecek. Emin misiniz?')) {
+                localStorage.clear();
+                daireler = [];
+                giderler = [];
+                ekraniGuncelle();
+            }
+        }
+
+        function verileriDisariAktar() {
+            let csv = "Daire No,Malik,Durum,Tutar\n";
+            daireler.forEach(d => {
+                csv += `"${d.no}","${d.kisi}","${d.durum}",${d.tutar}\n`;
+            });
+            
+            csv += "\nGider Açıklaması,Kategori,Tutar\n";
+            giderler.forEach(g => {
+                csv += `"${g.aciklama}","${g.kategori}",${g.tutar}\n`;
+            });
+
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'apartman_raporu.csv';
+            a.click();
+        }
+
+        function ekraniGuncelle() {
+            const daireTablosu = document.getElementById('daireTablosu');
+            const giderTablosu = document.getElementById('giderTablosu');
+            
+            daireTablosu.innerHTML = '';
+            giderTablosu.innerHTML = '';
+
+            let toplamGelir = 0;
+            let toplamBorc = 0;
+            let toplamGiderTutar = 0;
+
+            daireler.forEach(d => {
+                if (d.durum === 'Ödendi') toplamGelir += d.tutar;
+                else toplamBorc += d.tutar;
+
+                daireTablosu.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-medium text-slate-900">${d.no}</td>
+                        <td class="px-6 py-4 text-slate-600">${d.kisi}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${d.durum === 'Ödendi' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
+                                ${d.durum}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-600">${d.tutar} ₺</td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="durumDegistir(${d.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg transition">Durum Değiştir</button>
+                            <button onclick="daireSil(${d.id})" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1.5 rounded-lg transition">Sil</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            giderler.forEach(g => {
+                toplamGiderTutar += g.tutar;
+                giderTablosu.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-medium text-slate-900">${g.aciklama}</td>
+                        <td class="px-6 py-4 text-slate-600"><span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md text-xs">${g.kategori}</span></td>
+                        <td class="px-6 py-4 text-slate-600">${g.tutar} ₺</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="giderSil(${g.id})" class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1.5 rounded-lg transition">Sil</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('toplamDaire').innerText = daireler.length;
+            document.getElementById('toplamGelir').innerText = toplamGelir.toLocaleString() + ' ₺';
+            document.getElementById('toplamGiderTutar').innerText = toplamGiderTutar.toLocaleString() + ' ₺';
+            document.getElementById('toplamBorc').innerText = toplamBorc.toLocaleString() + ' ₺';
+        }
+
+        // İlk açılışta ekranı doldur
+        ekraniGuncelle();
+    </script>
+</body>
+</html>
